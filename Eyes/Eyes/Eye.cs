@@ -15,20 +15,16 @@ namespace Eyes
         float width, height;
         //Radii for w and h respectively 
         float rw, rh;
+        //Raddi for inner ellipse
+        float innerWidth, innerHeight;
+
+        //Pupil location
         float pupil_x, pupil_y;
+        //Pupil diameter
         float pupil_size;
 
-        float maxPupilX = 0;
-        float minPupilX = 0;
-
-        float maxPupilY = 0;
-        float minPupilY = 0;
-
         double ex, ey;
-        float lastMouseX, lastMouseY = 0;
 
-
-        double ellipseDrawangle = 0;
         double focalPointAtZero;
 
 
@@ -44,11 +40,12 @@ namespace Eyes
 
             pupil_x = x;
             pupil_y = y;
-            lastMouseX = x;
-            lastMouseY = y;
-            pupil_size = this.height / 2.0f;
+            pupil_size = this.height * 0.5f;
 
-            focalPointAtZero = Math.Sqrt(rw * rw - rh * rh);
+            innerWidth = rw - pupil_size / 2.0f;
+            innerHeight = rh - pupil_size / 2.0f;
+
+            focalPointAtZero = Math.Sqrt(innerWidth*innerWidth - innerHeight*innerHeight);
 
         }
 
@@ -61,37 +58,40 @@ namespace Eyes
         {
 
             //Ellipse
-            g.FillEllipse(Brushes.Blue, new RectangleF(x - rw, y - rh, width, height));
+            g.DrawEllipse(new Pen(Brushes.Black), new RectangleF(x - rw, y - rh, width, height));
 
+
+            //Filled Pupil
+            g.FillEllipse(Brushes.Black, new RectangleF(pupil_x - pupil_size / 2.0f, pupil_y - pupil_size / 2.0f, pupil_size, pupil_size));
 
             //Pupil
-            g.DrawEllipse(new Pen(Brushes.Black), new RectangleF(pupil_x - pupil_size / 2.0f, pupil_y - pupil_size / 2.0f, pupil_size, pupil_size));
+            //g.DrawEllipse(new Pen(Brushes.Black), new RectangleF(pupil_x - pupil_size / 2.0f, pupil_y - pupil_size / 2.0f, pupil_size, pupil_size));
             //Center of pupil
-            g.DrawEllipse(new Pen(Brushes.Black), new RectangleF(pupil_x - 5, pupil_y - 5, 10, 10));
+            //g.DrawEllipse(new Pen(Brushes.Black), new RectangleF(pupil_x - 5, pupil_y - 5, 10, 10));
 
             //Center
-            g.FillEllipse(Brushes.Black, new RectangleF(new PointF(x - 5, y - 5), new SizeF(10, 10)));
+            //g.FillEllipse(Brushes.Black, new RectangleF(new PointF(x - 5, y - 5), new SizeF(10, 10)));
             //Line to pupil center
-            g.DrawLine(new Pen(Brushes.Black), new PointF(x, y), new PointF(pupil_x, pupil_y));
+            //g.DrawLine(new Pen(Brushes.Black), new PointF(x, y), new PointF(pupil_x, pupil_y));
 
 
             //Point on ellipse
-            g.FillEllipse(Brushes.Red, new RectangleF(new PointF((float)ex - 5, (float)ey - 5), new SizeF(10, 10)));
-
-            //Getting point on the ellipse
-            EllipsePoint(ellipseDrawangle, g);
+            //g.FillEllipse(Brushes.Red, new RectangleF(new PointF((float)ex - 5, (float)ey - 5), new SizeF(10, 10)));
 
             //Line to ellipse point
-            g.DrawLine(new Pen(Brushes.Red), x, y, (float)ex, (float)ey);
+            //g.DrawLine(new Pen(Brushes.Red), x, y, (float)ex, (float)ey);
 
             //Axis
-            g.DrawLine(new Pen(Brushes.Red), x-rw, y, x+rw,y);
-            g.DrawLine(new Pen(Brushes.Red), x, y-rh, x, y+rh);
+            //g.DrawLine(new Pen(Brushes.Red), x-rw, y, x+rw,y);
+            //g.DrawLine(new Pen(Brushes.Red), x, y-rh, x, y+rh);
 
 
             //Focal points
-            g.DrawEllipse(new Pen(Brushes.Red), new RectangleF((float)focalPointAtZero-5 + x, y-5, 10, 10));
-            g.DrawEllipse(new Pen(Brushes.Red), new RectangleF(-(float)focalPointAtZero - 5 + x, y - 5, 10, 10));
+            //g.DrawEllipse(new Pen(Brushes.Red), new RectangleF((float)focalPointAtZero-5 + x, y-5, 10, 10));
+            //g.DrawEllipse(new Pen(Brushes.Red), new RectangleF(-(float)focalPointAtZero - 5 + x, y - 5, 10, 10));
+
+            //Inner ellipse
+            //g.DrawEllipse(new Pen(Brushes.Red), new RectangleF(x-innerWidth, y-innerHeight, 2* innerWidth, 2* innerHeight));
 
             //todo: use arcs again at some point
 
@@ -110,12 +110,8 @@ namespace Eyes
             double sum = distPos + distNeg;
 
 
-            return sum <= (2 * rw);
+            return sum <= (2 * innerWidth);
 
-        }
-
-        public void EllipsePoint(double angle, Graphics g)
-        {
         }
 
         public void Move(int mousex, int mousey)
@@ -131,12 +127,12 @@ namespace Eyes
                 if (top)
                 {
                     angle = -(Math.PI - Math.Abs(Math.Atan((y - mousey) / (x - mousex))));
-                    Console.WriteLine(RadToDegrees(angle));
+                    //Console.WriteLine(RadToDegrees(angle));
                 }
                 else
                 {
                     angle = -(Math.PI - Math.Atan((mousey - y) / (mousex - x)));
-                    Console.WriteLine(RadToDegrees(angle));
+                    //Console.WriteLine(RadToDegrees(angle));
                 }
             }
             else
@@ -144,37 +140,50 @@ namespace Eyes
                 if (top)
                 {
                     angle = -Math.Atan((mousey - y) / (x - mousex));
-                    Console.WriteLine(RadToDegrees(angle));
+                    //Console.WriteLine(RadToDegrees(angle));
                 }
                 else
                 {
                     angle = Math.Atan((y - mousey) / (x - mousex));
-                    Console.WriteLine(RadToDegrees(angle));
+                    //Console.WriteLine(RadToDegrees(angle));
                 }
             }
 
-            ellipseDrawangle = angle;
+            if(mousex == x)
+            {
+                if(top)
+                {
+                    angle = -Math.PI / 2.0;
+                } else
+                {
+                    angle = Math.PI / 2.0;
+                }
+            }
+            if(mousey == y)
+            {
+                if(left)
+                {
+                    angle = -Math.PI;
+                } else
+                {
+                    angle = 0;
+                }
+            }
 
-            double r = Math.Sqrt((rw*rw*rh*rh)/(rh*rh*Math.Cos(angle)*Math.Cos(angle) + rw*rw*Math.Sin(angle)*Math.Sin(angle)));
+            double r = Math.Sqrt((innerWidth * innerWidth* innerHeight * innerHeight) /(innerHeight* innerHeight * Math.Cos(angle)*Math.Cos(angle) + innerWidth * innerWidth * Math.Sin(angle)*Math.Sin(angle)));
 
             ex = r * Math.Cos(angle) + x;
-            ey = r*Math.Sin(angle) + y;
-
+            ey = r * Math.Sin(angle) + y;
 
             if(Intersect(mousex, mousey))
             {
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!Mouse on ellipse");
                 pupil_x = mousex;
                 pupil_y = mousey;
             } else
             {
-                Console.WriteLine("Mouse NOT on ellipse");
                 pupil_x = (float)ex;
                 pupil_y = (float)ey;
             }
-
-
-
         }
 
     }
